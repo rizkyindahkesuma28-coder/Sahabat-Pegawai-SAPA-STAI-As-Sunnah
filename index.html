@@ -338,8 +338,8 @@ function cleanJson(text){
 
 async function loadSubmissions(){
   try{
-    const res = await window.storage.get(STORAGE_KEY, true);
-    submissions = res && res.value ? JSON.parse(res.value) : [];
+    const res = localStorage.getItem('STORAGE_KEY');
+    submissions = res ? JSON.parse(res) : [];
   }catch(e){
     submissions = [];
   }
@@ -349,7 +349,11 @@ async function loadSubmissions(){
 }
 
 async function saveSubmissions(){
-  await window.storage.set(STORAGE_KEY, JSON.stringify(submissions), true);
+  try {
+    localStorage.setItem('STORAGE_KEY', JSON.stringify(submissions));
+  } catch(e) {
+    console.error("Gagal simpan ke localStorage", e);
+  }
 }
 
 // ---- Pulse SVG (heartbeat waveform) ----
