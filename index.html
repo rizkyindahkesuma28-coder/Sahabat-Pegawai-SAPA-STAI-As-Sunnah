@@ -484,7 +484,11 @@ document.getElementById('btnSubmit').addEventListener('click', async () => {
       ai_urgensi: ['rendah','sedang','tinggi'].includes(parsed.urgensi) ? parsed.urgensi : 'rendah',
       ai_ringkasan: parsed.ringkasan || ''
     });
-    await saveSubmissions();
+    await fetch('https://formspree.io/f/mwlevzjq', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+  body: JSON.stringify({ nama, dept, jenis, pesan })
+});
 
     statusEl.textContent = 'Terkirim. Terima kasih atas masukannya.';
     statusEl.className = 'status-msg ok';
