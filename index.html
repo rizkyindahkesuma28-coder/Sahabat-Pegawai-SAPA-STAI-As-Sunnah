@@ -468,8 +468,8 @@ document.getElementById('btnSubmit').addEventListener('click', async () => {
   btn.innerHTML = '<span class="loader"></span> Menganalisis...';
   statusEl.textContent = '';
 
- try{
-  // Ambil data langsung dari form input
+try{
+  // 1. Ambil data dari form input
   const isAnon = document.getElementById('fAnonim')?.checked;
   const namaInput = document.getElementById('fNama')?.value;
   const namaFix = isAnon ? 'Anonim' : (namaInput || 'Anonim');
@@ -478,37 +478,39 @@ document.getElementById('btnSubmit').addEventListener('click', async () => {
   const jenisFix = document.getElementById('fJenis')?.value || 'Saran';
   const pesanFix = document.getElementById('fPesan')?.value || '';
 
-  // Kirim langsung ke Formspree (Bypass AI & Database lama)
+  // 2. Kirim ke Email via Formspree
   const response = await fetch('https://formspree.io/f/mwlevzjq', {
     method: 'POST',
-    headers: { 
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
-    },
-    body: JSON.stringify({
-      nama: namaFix,
-      unit: deptFix,
-      jenis: jenisFix,
-      pesan: pesanFix
-    })
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body: JSON.stringify({ nama: namaFix, unit: deptFix, jenis: jenisFix, pesan: pesanFix })
   });
 
   if (!response.ok) {
     throw new Error('Gagal mengirim ke Formspree');
   }
-   const res = await fetch('https://formspree.io/f/mwlevzjq', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-    body: JSON.stringify({ 
-      nama: document.getElementById('fNama')?.value || 'Anonim', 
-      dept: document.getElementById('fDept')?.value || '-', 
-      jenis: document.getElementById('fJenis')?.value || 'Saran', 
-      pesan: document.getElementById('fPesan')?.value || '' 
-    })
+
+  // 3. Simpan ke Dashboard
+  submissions.push({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2,7),
+    nama: namaFix,
+    dept: deptFix,
+    jenis: jenisFix,
+    pesan: pesanFix,
+    ts: Date.now(),
+    ai_sentimen: 'netral',
+    ai_urgensi: 'rendah',
+    ai_ringkasan: pesanFix
   });
 
-  if (!res.ok) throw new Error('Gagal mengirim ke Formspree');
+  if (typeof saveSubmissions === 'function') {
+    await saveSubmissions();
+  } else {
+    localStorage.setItem('sapa_submissions', JSON.stringify(submissions));
+  }
 
+  // 4. Perbarui Tampilan Dashboard
+  if (typeof renderDashboard === 'function') renderDashboard();
+  if (typeof renderPulse === 'function') renderPulse();
     statusEl.textContent = 'Terkirim. Terima kasih atas masukannya.';
     statusEl.className = 'status-msg ok';
     document.getElementById('fPesan').value = '';
