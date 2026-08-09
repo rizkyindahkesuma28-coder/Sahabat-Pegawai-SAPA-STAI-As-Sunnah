@@ -478,21 +478,20 @@ try {
   const jenisFix = document.getElementById('fJenis')?.value || 'Saran';
   const pesanFix = document.getElementById('fPesan')?.value || '';
 
-  // 2. Kirim email via Formspree
-  await fetch('https://formspree.io/f/mwlevzjq', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-    body: JSON.stringify({
-      nama: namaFix,
-      unit: deptFix,
-      jenis: jenisFix,
-      pesan: pesanFix
-    })
-  });
+  // 2. Coba kirim email via Formspree (Abaikan jika gagal)
+  try {
+    await fetch('https://formspree.io/f/mwlevzjq', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ nama: namaFix, unit: deptFix, jenis: jenisFix, pesan: pesanFix })
+    });
+  } catch (errFormspree) {
+    console.warn('Formspree terlewat/gagal:', errFormspree);
+  }
 
-  // 3. Simpan data agar muncul di Dashboard Kepegawaian
+  // 3. Simpan data ke memori lokal untuk Dashboard Kepegawaian
   const newSubmission = {
-    id: Date.now().toString(36) + Math.random().toString(36).slice(2,7),
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
     nama: namaFix,
     dept: deptFix,
     jenis: jenisFix,
@@ -503,14 +502,13 @@ try {
     ai_ringkasan: pesanFix
   };
 
-  submissions.push(newSubmission);
-  if (typeof saveSubmissions === 'function') {
-    await saveSubmissions();
-  } else {
+  // Pastikan array submissions ada
+  if (typeof submissions !== 'undefined') {
+    submissions.push(newSubmission);
     localStorage.setItem('sapa_submissions', JSON.stringify(submissions));
   }
 
-  // 4. Tampilkan status sukses & perbarui grafik/dashboard
+  // 4. Update tampilan UI ke status Terkirim
   statusEl.textContent = 'Terkirim. Terima kasih atas masukannya.';
   statusEl.className = 'status-msg ok';
   if (document.getElementById('fPesan')) document.getElementById('fPesan').value = '';
@@ -520,10 +518,10 @@ try {
   if (typeof renderDashboard === 'function') renderDashboard();
 
 } catch (e) {
-  console.error(e);
+  console.error("Detail Error:", e);
   statusEl.textContent = 'Gagal mengirim. Coba lagi sebentar lagi.';
   statusEl.className = 'status-msg err';
-  }
+}
   }finally{
     btn.disabled = false;
     btn.innerHTML = 'Kirim Masukan';
