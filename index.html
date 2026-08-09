@@ -507,20 +507,23 @@ try {
     ai_ringkasan: pesanFix
   };
 
-  // Pastikan array submissions ada
-  if (typeof submissions !== 'undefined') {
-    submissions.push(newSubmission);
-    localStorage.setItem('sapa_submissions', JSON.stringify(submissions));
-  }
+  // Pastikan array submissions ada & simpan ke STORAGE_KEY
+if (typeof submissions !== 'undefined') {
+  submissions.push(newSubmission);
+  saveSubmissions(); // Menggunakan fungsi saveSubmissions yang benar
+}
 
-  // 4. Update tampilan UI ke status Terkirim
-  statusEl.textContent = 'Terkirim. Terima kasih atas masukannya.';
-  statusEl.className = 'status-msg ok';
-  if (document.getElementById('fPesan')) document.getElementById('fPesan').value = '';
-  if (document.getElementById('fNama')) document.getElementById('fNama').value = '';
+// 4. Update tampilan UI ke status Terkirim
+statusEl.textContent = 'Terkirim. Terima kasih atas masukannya.';
+statusEl.className = 'status-msg ok';
+if (document.getElementById('fPesan')) document.getElementById('fPesan').value = '';
+if (document.getElementById('fNama')) document.getElementById('fNama').value = '';
 
-  if (typeof renderPulse === 'function') renderPulse();
-  if (typeof renderDashboard === 'function') renderDashboard();
+// Update grafik & tabel Dashboard
+if (typeof renderPulse === 'function') renderPulse();
+if (typeof renderDeptFilter === 'function') renderDeptFilter();
+if (typeof renderEntries === 'function') renderEntries();
+if (typeof renderDashboard === 'function') renderDashboard();
 
 } catch (e) {
   console.error("Detail Error:", e);
