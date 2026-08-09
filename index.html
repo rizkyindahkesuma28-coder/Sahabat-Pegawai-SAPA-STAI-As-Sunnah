@@ -511,6 +511,7 @@ try{
   // 4. Perbarui Tampilan Dashboard
   if (typeof renderDashboard === 'function') renderDashboard();
   if (typeof renderPulse === 'function') renderPulse();
+  
     statusEl.textContent = 'Terkirim. Terima kasih atas masukannya.';
     statusEl.className = 'status-msg ok';
     document.getElementById('fPesan').value = '';
