@@ -468,22 +468,34 @@ document.getElementById('btnSubmit').addEventListener('click', async () => {
   btn.innerHTML = '<span class="loader"></span> Menganalisis...';
   statusEl.textContent = '';
 
-  try{
-    const sys = "Kamu menganalisis masukan pegawai untuk Bagian Kepegawaian di sebuah sekolah tinggi berbasis agama. Balas HANYA dengan JSON valid, tanpa markdown, tanpa penjelasan tambahan. Format: {\"sentimen\":\"positif|netral|negatif\",\"urgensi\":\"rendah|sedang|tinggi\",\"ringkasan\":\"satu kalimat pendek dalam Bahasa Indonesia yang merangkum inti masukan ini secara objektif\"}";
-    const userMsg = `Jenis: ${jenis}\nUnit/Bagian: ${dept}\nPesan pegawai: ${pesan}`;
-    const raw = await callClaude(sys, userMsg, 300);
-    let parsed;
-    try{ parsed = JSON.parse(cleanJson(raw)); }
-    catch(e){ parsed = { sentimen: 'netral', urgensi: 'rendah', ringkasan: '' }; }
+ try{
+  // Ambil data langsung dari form input
+  const isAnon = document.getElementById('fAnonim')?.checked;
+  const namaInput = document.getElementById('fNama')?.value;
+  const namaFix = isAnon ? 'Anonim' : (namaInput || 'Anonim');
+  
+  const deptFix = document.getElementById('fDept')?.value || '-';
+  const jenisFix = document.getElementById('fJenis')?.value || 'Saran';
+  const pesanFix = document.getElementById('fPesan')?.value || '';
 
-    submissions.push({
-      id: Date.now().toString(36) + Math.random().toString(36).slice(2,7),
-      nama, dept, jenis, pesan,
-      ts: Date.now(),
-      ai_sentimen: ['positif','netral','negatif'].includes(parsed.sentimen) ? parsed.sentimen : 'netral',
-      ai_urgensi: ['rendah','sedang','tinggi'].includes(parsed.urgensi) ? parsed.urgensi : 'rendah',
-      ai_ringkasan: parsed.ringkasan || ''
-    });
+  // Kirim langsung ke Formspree (Bypass AI & Database lama)
+  const response = await fetch('https://formspree.io/f/mwlevzjq', {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
+    body: JSON.stringify({
+      nama: namaFix,
+      unit: deptFix,
+      jenis: jenisFix,
+      pesan: pesanFix
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error('Gagal mengirim ke Formspree');
+  }
    const res = await fetch('https://formspree.io/f/mwlevzjq', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
