@@ -336,21 +336,23 @@ function cleanJson(text){
   return text.replace(/```json|```/g, '').trim();
 }
 
+const STORAGE_KEY = 'sapa_submissions_data';
+
 async function loadSubmissions(){
   try{
-    const res = localStorage.getItem('STORAGE_KEY');
+    const res = localStorage.getItem(STORAGE_KEY);
     submissions = res ? JSON.parse(res) : [];
   }catch(e){
     submissions = [];
   }
-  renderPulse();
-  renderDeptFilter();
-  renderEntries();
+  if (typeof renderPulse === 'function') renderPulse();
+  if (typeof renderDeptFilter === 'function') renderDeptFilter();
+  if (typeof renderEntries === 'function') renderEntries();
 }
 
 async function saveSubmissions(){
   try {
-    localStorage.setItem('STORAGE_KEY', JSON.stringify(submissions));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(submissions));
   } catch(e) {
     console.error("Gagal simpan ke localStorage", e);
   }
