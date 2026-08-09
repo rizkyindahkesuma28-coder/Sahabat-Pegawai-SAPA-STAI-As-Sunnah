@@ -464,64 +464,46 @@ document.getElementById('btnSubmit').addEventListener('click', async () => {
     return;
   }
 
-  btn.addEventListener('click', async () => {
   btn.disabled = true;
-  btn.innerHTML = 'Sending...';
+  btn.innerHTML = '<span class="loader"></span> Menganalisis...';
+  statusEl.textContent = '';
 
-  try {
-    // 1. Ambil nilai dari form
-    const isAnon = document.getElementById('fAnonim')?.checked;
-    const namaInput = document.getElementById('fNama')?.value;
-    const namaFix = isAnon ? 'Anonim' : (namaInput || 'Anonim');
-    
-    const deptFix = document.getElementById('fDept')?.value || '-';
-    const jenisFix = document.getElementById('fJenis')?.value || 'Saran';
-    const pesanFix = document.getElementById('fPesan')?.value || '';
+  try{
+    const sys = "Kamu menganalisis masukan pegawai untuk Bagian Kepegawaian di sebuah sekolah tinggi berbasis agama. Balas HANYA dengan JSON valid, tanpa markdown, tanpa penjelasan tambahan. Format: {\"sentimen\":\"positif|netral|negatif\",\"urgensi\":\"rendah|sedang|tinggi\",\"ringkasan\":\"satu kalimat pendek dalam Bahasa Indonesia yang merangkum inti masukan ini secara objektif\"}";
+    const userMsg = `Jenis: ${jenis}\nUnit/Bagian: ${dept}\nPesan pegawai: ${pesan}`;
+    const raw = await callClaude(sys, userMsg, 300);
+    let parsed;
+    try{ parsed = JSON.parse(cleanJson(raw)); }
+    catch(e){ parsed = { sentimen: 'netral', urgensi: 'rendah', ringkasan: '' }; }
 
-    // 2. Simpan ke Dashboard (localStorage)
     submissions.push({
       id: Date.now().toString(36) + Math.random().toString(36).slice(2,7),
-      nama: namaFix,
-      dept: deptFix,
-      jenis: jenisFix,
-      pesan: pesanFix,
+      nama, dept, jenis, pesan,
       ts: Date.now(),
-      ai_sentimen: 'netral',
-      ai_urgensi: 'rendah',
-      ai_ringkasan: pesanFix
+      ai_sentimen: ['positif','netral','negatif'].includes(parsed.sentimen) ? parsed.sentimen : 'netral',
+      ai_urgensi: ['rendah','sedang','tinggi'].includes(parsed.urgensi) ? parsed.urgensi : 'rendah',
+      ai_ringkasan: parsed.ringkasan || ''
     });
-
-    if (typeof saveSubmissions === 'function') {
-      try { await saveSubmissions(); } catch(err) { console.log(err); }
-    }
-    localStorage.setItem('sapa_submissions', JSON.stringify(submissions));
-
-    // 3. Kirim ke Formspree di latar belakang
-    fetch('https://formspree.io/f/mwlevzjq', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({ nama: namaFix, unit: deptFix, jenis: jenisFix, pesan: pesanFix })
-    }).catch(err => console.log('Formspree background error:', err));
-
-    // 4. Update tampilan & reset form
-    if (typeof renderDashboard === 'function') renderDashboard();
-    if (typeof renderPulse === 'function') renderPulse();
+   await fetch('https://formspree.io/f/mwlevzjq', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body: JSON.stringify({ nama, dept, jenis, pesan })
+  });
 
     statusEl.textContent = 'Terkirim. Terima kasih atas masukannya.';
     statusEl.className = 'status-msg ok';
-    if (document.getElementById('fPesan')) document.getElementById('fPesan').value = '';
-    if (document.getElementById('fNama')) document.getElementById('fNama').value = '';
-
-  } catch (e) {
-    console.error(e);
+    document.getElementById('fPesan').value = '';
+    document.getElementById('fNama').value = '';
+    renderPulse();
+  }catch(e){
     statusEl.textContent = 'Gagal mengirim. Coba lagi sebentar lagi.';
     statusEl.className = 'status-msg err';
-  } finally {
+  }finally{
     btn.disabled = false;
     btn.innerHTML = 'Kirim Masukan';
   }
 });
-  
+
 // ---- Dashboard summary ----
 document.getElementById('btnSummarize').addEventListener('click', async () => {
   const btn = document.getElementById('btnSummarize');
