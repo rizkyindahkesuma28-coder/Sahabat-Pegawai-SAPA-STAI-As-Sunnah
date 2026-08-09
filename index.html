@@ -468,8 +468,8 @@ document.getElementById('btnSubmit').addEventListener('click', async () => {
   btn.innerHTML = '<span class="loader"></span> Menganalisis...';
   statusEl.textContent = '';
 
-try{
-  // 1. Ambil data dari form input
+try {
+  // 1. Ambil nilai dari elemen form secara aman
   const isAnon = document.getElementById('fAnonim')?.checked;
   const namaInput = document.getElementById('fNama')?.value;
   const namaFix = isAnon ? 'Anonim' : (namaInput || 'Anonim');
@@ -478,18 +478,7 @@ try{
   const jenisFix = document.getElementById('fJenis')?.value || 'Saran';
   const pesanFix = document.getElementById('fPesan')?.value || '';
 
-  // 2. Kirim ke Email via Formspree
-  const response = await fetch('https://formspree.io/f/mwlevzjq', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-    body: JSON.stringify({ nama: namaFix, unit: deptFix, jenis: jenisFix, pesan: pesanFix })
-  });
-
-  if (!response.ok) {
-    throw new Error('Gagal mengirim ke Formspree');
-  }
-
-  // 3. Simpan ke Dashboard
+  // 2. Simpan masukan ke memori lokal & Dashboard
   submissions.push({
     id: Date.now().toString(36) + Math.random().toString(36).slice(2,7),
     nama: namaFix,
@@ -502,30 +491,33 @@ try{
     ai_ringkasan: pesanFix
   });
 
+  // Simpan ke storage browser
   if (typeof saveSubmissions === 'function') {
-    await saveSubmissions();
-  } else {
-    localStorage.setItem('sapa_submissions', JSON.stringify(submissions));
+    try { await saveSubmissions(); } catch(err) { console.log(err); }
   }
+  localStorage.setItem('sapa_submissions', JSON.stringify(submissions));
 
-  // 4. Perbarui Tampilan Dashboard
+  // 3. Kirim ke Formspree di latar belakang (tanpa menggagalkan form jika Formspree error)
+  fetch('https://formspree.io/f/mwlevzjq', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body: JSON.stringify({ nama: namaFix, unit: deptFix, jenis: jenisFix, pesan: pesanFix })
+  }).catch(err => console.log('Formspree background error:', err));
+
+  // 4. Perbarui Tampilan Dashboard & Reset Form
   if (typeof renderDashboard === 'function') renderDashboard();
   if (typeof renderPulse === 'function') renderPulse();
-  
-    statusEl.textContent = 'Terkirim. Terima kasih atas masukannya.';
-    statusEl.className = 'status-msg ok';
-    document.getElementById('fPesan').value = '';
-    document.getElementById('fNama').value = '';
-    renderPulse();
-  }catch(e){
-    statusEl.textContent = 'Gagal mengirim. Coba lagi sebentar lagi.';
-    statusEl.className = 'status-msg err';
-  }finally{
-    btn.disabled = false;
-    btn.innerHTML = 'Kirim Masukan';
-  }
-});
 
+  statusEl.textContent = 'Terkirim. Terima kasih atas masukannya.';
+  statusEl.className = 'status-msg ok';
+  if (document.getElementById('fPesan')) document.getElementById('fPesan').value = '';
+  if (document.getElementById('fNama')) document.getElementById('fNama').value = '';
+
+} catch (e) {
+  console.error(e);
+  statusEl.textContent = 'Gagal mengirim. Coba lagi sebentar lagi.';
+  statusEl.className = 'status-msg err';
+}
 // ---- Dashboard summary ----
 document.getElementById('btnSummarize').addEventListener('click', async () => {
   const btn = document.getElementById('btnSummarize');
